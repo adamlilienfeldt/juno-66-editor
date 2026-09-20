@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>juno-66 editor</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23e8944a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>juno-66 editor</h1>
+  <p class="sub">Roland Juno-60 · Tubbutec juno-66 mod</p>
+</header>
+
+<main>
+  <section class="panel" id="connection">
+    <h2>Connection</h2>
+    <div id="midi-status" class="status status-pending">Requesting MIDI access…</div>
+    <div class="row">
+      <label for="output-select">MIDI output</label>
+      <select id="output-select" disabled><option>—</option></select>
+    </div>
+    <div class="row">
+      <label for="channel-input">Channel</label>
+      <input id="channel-input" type="number" min="1" max="16" value="1">
+      <span class="hint">Must match the juno-66's receive channel.</span>
+    </div>
+  </section>
+
+  <section class="panel" id="parameters">
+    <h2>Parameters</h2>
+    <p class="warn">
+      None of these CC numbers have been verified against the juno-66 manual for
+      your firmware. Check each one against the appendix, or find it by ear with
+      the Discovery panel below, before relying on it.
+    </p>
+    <div id="param-groups"></div>
+  </section>
+
+  <section class="panel" id="tuning">
+    <h2>Tuning</h2>
+    <p class="hint">
+      Sends a MIDI Tuning Standard bulk dump into one of the four custom scale
+      slots. The juno-66 keeps these over a power cycle.
+    </p>
+
+    <div class="row">
+      <label for="scale-select">Scale</label>
+      <select id="scale-select"></select>
+      <button id="import-scl" type="button" class="secondary">Import .scl…</button>
+      <button id="export-scl" type="button" class="secondary">Export .scl</button>
+      <input id="scl-file" type="file" accept=".scl,text/plain" hidden>
+    </div>
+
+    <div class="row">
+      <label for="slot-select">Slot</label>
+      <select id="slot-select">
+        <option value="0">0</option><option value="1">1</option>
+        <option value="2">2</option><option value="3">3</option>
+      </select>
+      <label for="device-id">Device ID</label>
+      <input id="device-id" type="number" min="0" max="127" value="0">
+      <label for="tuning-name">Name</label>
+      <input id="tuning-name" type="text" maxlength="16" placeholder="16 chars">
+    </div>
+
+    <div class="row">
+      <label for="root-note">Root note</label>
+      <input id="root-note" type="number" min="0" max="127" value="60">
+      <label for="root-freq">Root Hz</label>
+      <input id="root-freq" type="number" step="0.0001" value="261.6256">
+      <label class="checkbox">
+        <input id="checksum-variant" type="checkbox" checked>
+        Device ID in checksum
+      </label>
+    </div>
+
+    <div id="degree-editor" class="degrees"></div>
+
+    <div class="row">
+      <button id="send-tuning" type="button" disabled>Send tuning dump</button>
+      <span id="dump-summary" class="hint"></span>
+    </div>
+  </section>
+
+  <section class="panel" id="discovery">
+    <h2>Discovery</h2>
+    <p class="hint">
+      For finding the real CC numbers by ear. Hold a note, sweep a controller,
+      listen for what moves.
+    </p>
+
+    <div class="row">
+      <label for="raw-cc">CC number</label>
+      <input id="raw-cc" type="number" min="0" max="127" value="5">
+      <label for="raw-value">Value</label>
+      <input id="raw-value" type="range" min="0" max="127" value="0">
+      <output id="raw-value-out">0</output>
+      <button id="raw-sweep" type="button" class="secondary" disabled>Sweep 0→127</button>
+    </div>
+
+    <div class="row">
+      <label for="test-note">Test note</label>
+      <input id="test-note" type="number" min="0" max="127" value="60">
+      <button id="note-hold" type="button" class="secondary" disabled>Hold note</button>
+      <button id="all-notes-off" type="button" class="secondary" disabled>All notes off</button>
+    </div>
+
+    <div class="row">
+      <label for="sysex-hex">SysEx</label>
+      <input id="sysex-hex" type="text" placeholder="7E 00 08 01 …" spellcheck="false">
+      <button id="send-sysex" type="button" class="secondary" disabled>Send</button>
+    </div>
+  </section>
+
+  <section class="panel" id="log-panel">
+    <h2>Sent <button id="clear-log" type="button" class="secondary small">Clear</button></h2>
+    <ol id="log" reversed></ol>
+  </section>
+</main>
+
+<script type="module" src="src/app.js"></script>
+</body>
+</html>

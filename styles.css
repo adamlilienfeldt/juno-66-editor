@@ -1,0 +1,164 @@
+:root {
+  --bg: #14161a;
+  --panel: #1c1f25;
+  --panel-edge: #2a2f38;
+  --ink: #e4e7ec;
+  --ink-dim: #9aa3b0;
+  --accent: #e8944a;
+  --accent-ink: #1a1207;
+  --warn-bg: #3a2a12;
+  --warn-edge: #7a5520;
+  --ok: #6fbf73;
+  --bad: #e06c6c;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 16px 64px;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+header { max-width: 900px; margin: 0 auto; padding: 32px 0 8px; }
+h1 { margin: 0; font-size: 22px; letter-spacing: 0.02em; font-weight: 600; }
+.sub { margin: 4px 0 0; color: var(--ink-dim); font-size: 13px; }
+
+main { max-width: 900px; margin: 0 auto; display: grid; gap: 16px; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.row:last-child { margin-bottom: 0; }
+
+label { font-size: 13px; color: var(--ink-dim); }
+label.checkbox { display: flex; align-items: center; gap: 6px; }
+
+input, select, button {
+  font: inherit;
+  color: var(--ink);
+  background: #242831;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  padding: 6px 9px;
+}
+input[type="number"] { width: 90px; font-family: var(--mono); }
+input[type="text"] { min-width: 200px; font-family: var(--mono); flex: 1; }
+input[type="range"] { flex: 1; min-width: 140px; padding: 0; accent-color: var(--accent); }
+select { min-width: 160px; }
+
+button {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+button.secondary { background: #2e333d; color: var(--ink); font-weight: 500; }
+button.small { padding: 2px 8px; font-size: 12px; margin-left: auto; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:not(:disabled):hover { filter: brightness(1.12); }
+
+.hint { font-size: 12px; color: var(--ink-dim); }
+output { font-family: var(--mono); font-size: 13px; min-width: 34px; }
+
+.status { padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; }
+.status-pending { background: #262a33; color: var(--ink-dim); }
+.status-ok { background: #1e3021; color: var(--ok); }
+.status-error { background: #33201f; color: var(--bad); }
+
+.warn {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-edge);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+
+.param {
+  display: grid;
+  grid-template-columns: 190px 60px 1fr 44px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--panel-edge);
+}
+.param-name { display: flex; flex-direction: column; gap: 3px; }
+.param-name strong { font-weight: 500; font-size: 14px; }
+.group-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 16px 0 2px;
+  color: var(--ink);
+}
+.cc-num { font-family: var(--mono); font-size: 12px; color: var(--ink-dim); }
+
+.badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  width: fit-content;
+  cursor: help;
+}
+.badge-documented { color: #d2a24c; }
+.badge-midi-standard { color: #7fa8d8; }
+.badge-guess { color: var(--bad); }
+
+.degrees {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 6px;
+  margin: 14px 0;
+}
+.degree { display: flex; align-items: center; gap: 5px; }
+.degree span { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); width: 20px; }
+.degree input { width: 100%; font-family: var(--mono); font-size: 12px; padding: 4px 6px; }
+
+#log {
+  font-family: var(--mono);
+  font-size: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+}
+#log li { padding: 3px 0; border-top: 1px solid var(--panel-edge); color: var(--ink-dim); }
+#log li:first-child { border-top: none; }
+#log .what { color: var(--ink); }
+#log .failed { color: var(--bad); }
+
+@media (max-width: 620px) {
+  .param { grid-template-columns: 1fr; }
+  input[type="text"] { min-width: 0; }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "juno-66-editor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser MIDI editor for a Roland Juno-60 with the Tubbutec juno-66 mod",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "serve": "node serve.js"
+  }
+}
