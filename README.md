@@ -37,21 +37,63 @@ channel.
 
 ## Status of the parameter map
 
-**The CC numbers in `src/params.js` are not verified.** They come from
-Tubbutec's public documentation and from the MIDI specification's own defaults,
-not from the CC appendix of the manual for any particular firmware — and that
-map has changed between firmware releases.
+Built against the **firmware V1.29** user manual.
 
-Every parameter carries a confidence badge in the UI saying where its number
-came from. To correct them:
+Four numbers come from the manual's body text and are in `src/params.js`:
 
-1. Get the user manual PDF for **your** firmware version from
-   [tubbutec.de](https://tubbutec.de/juno-66/), or check
-   [midi.guide](https://midi.guide/d/tubbutec/juno-66/).
-2. Fix the entries in `src/params.js` and drop the `confidence` note.
+| Parameter          | CC | Confidence                            |
+| ------------------ | -- | ------------------------------------- |
+| Filter modulation  | 17 | Stated explicitly, default value 0    |
+| Fatness            | 27 | Stated twice, in Duo and Mono alike   |
+| Detune             | 26 | Stated twice, in Duo and Mono alike   |
+| Portamento time    | 6  | **Conflicting** — see below           |
 
-The **Discovery** panel exists for working them out empirically: hold a note,
-sweep a controller number across its range, listen for what moves.
+The portamento section says the exact slow and fast times "can be set using
+midi CC 6 or the config menu 11". But the Duo section says the same of
+*fatness* — while also naming CC 27 for fatness two paragraphs later. One of
+those is a copy-paste error in the manual. CC 6 is data entry MSB, which
+suggests it acts on whatever the config menu currently has selected rather than
+addressing portamento directly. Check it by ear.
+
+Everything else the manual describes as MIDI-controllable — the filter ADSR,
+both filter LFOs, the clock dividers — has its controller number **only in the
+chart on page 23**, which is a figure rather than text. Those parameters ship
+blank. Type the numbers into the CC field next to each one; the page remembers
+them, and **Export CC map** writes them out as JSON.
+
+### What the panel does vs. what MIDI does
+
+Portamento speed is selected by the **RANGE** switch on the panel: 1 is off,
+2 is fast, 3 is slow. MIDI does not choose between them — it sets what "fast"
+and "slow" actually mean. There are also two portamento modes, Constant Time
+(the default) and Constant Speed, selected only in config menu 11.
+
+### Values set over MIDI are not saved automatically
+
+From the manual: *"Parameters that are also controlled using midi are saved
+when pressing any unused key in the config menu."* So the workflow for anything
+you want to keep is:
+
+1. Send the value from here until it sounds right.
+2. On the synth, long-press KEY TRANSPOSE until it flashes.
+3. Press any unused key to commit.
+4. Press KEY TRANSPOSE again to leave.
+
+Custom scales are the exception — those persist on upload.
+
+### Other constraints worth knowing
+
+- The mod accepts notes **36–97** only (six octaves, C0–C5).
+- Note 0 triggers the arpeggiator and note 1 the sample & hold, when the config
+  menu has them set to MIDI-note clocking.
+- MIDI out runs on **two channels at once**: "as played" (the keyboard) and
+  "as sounds" (what the arp, chord and mono modes actually produce). Both are
+  configurable, or can be switched off, in the config menu.
+- Program change messages switch play mode, in both directions. The number-to-
+  mode table is also a figure, so the Received panel is the easiest way to read
+  it off: change the mode on the panel and watch what arrives.
+- If filter control does nothing, the manual's first suggestion is that the
+  filter cable may not be soldered to the right point on the Juno board.
 
 ## Tuning
 
@@ -89,6 +131,7 @@ them appears to handle MTS tuning upload.
 | `src/mts.js`    | MIDI Tuning Standard bulk dump encoding             |
 | `src/scale.js`  | Temperaments, scale→frequency mapping, `.scl` I/O   |
 | `src/midi.js`   | Web MIDI access and message construction            |
-| `src/params.js` | The juno-66 parameter map — **needs verification**  |
+| `src/params.js` | The juno-66 parameter map, from the V1.29 manual    |
+| `src/overrides.js` | CC numbers transcribed from the manual chart     |
 | `src/app.js`    | UI wiring                                           |
 | `serve.js`      | Static server, so the page gets a secure context    |

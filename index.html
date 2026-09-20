@@ -31,10 +31,16 @@
   <section class="panel" id="parameters">
     <h2>Parameters</h2>
     <p class="warn">
-      None of these CC numbers have been verified against the juno-66 manual for
-      your firmware. Check each one against the appendix, or find it by ear with
-      the Discovery panel below, before relying on it.
+      Numbers marked <em>needs chart</em> are blank because the manual's MIDI
+      controller chart is a figure on page 23, not text. Type them in here and
+      they will be remembered. Anything marked <em>conflicting</em> is given two
+      different meanings by the manual — check it by ear first.
     </p>
+    <div class="row">
+      <button id="export-map" type="button" class="secondary">Export CC map</button>
+      <button id="reset-map" type="button" class="secondary">Reset to manual defaults</button>
+      <span id="map-status" class="hint"></span>
+    </div>
     <div id="param-groups"></div>
   </section>
 
@@ -103,6 +109,7 @@
     <div class="row">
       <label for="test-note">Test note</label>
       <input id="test-note" type="number" min="0" max="127" value="60">
+      <span id="note-range-warning" class="hint"></span>
       <button id="note-hold" type="button" class="secondary" disabled>Hold note</button>
       <button id="all-notes-off" type="button" class="secondary" disabled>All notes off</button>
     </div>
@@ -112,6 +119,24 @@
       <input id="sysex-hex" type="text" placeholder="7E 00 08 01 …" spellcheck="false">
       <button id="send-sysex" type="button" class="secondary" disabled>Send</button>
     </div>
+  </section>
+
+  <section class="panel" id="monitor-panel">
+    <h2>Received <button id="clear-monitor" type="button" class="secondary small">Clear</button></h2>
+    <div class="row">
+      <label for="input-select">MIDI input</label>
+      <select id="input-select" disabled><option>—</option></select>
+      <label class="checkbox">
+        <input id="monitor-clock" type="checkbox">
+        Show clock &amp; active sensing
+      </label>
+    </div>
+    <p class="hint">
+      The juno-66 sends on two channels at once — "as played" (the keyboard) and
+      "as sounds" (what the arp, chord and mono modes actually produce). It also
+      sends a program change when the play mode changes.
+    </p>
+    <ol id="monitor" reversed></ol>
   </section>
 
   <section class="panel" id="log-panel">

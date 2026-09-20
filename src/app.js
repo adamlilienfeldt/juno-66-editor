@@ -1,15 +1,19 @@
 import { buildBulkTuningDump } from './mts.js';
 import { BUILT_IN_SCALES, formatScl, parseScl, scaleToFrequencies } from './scale.js';
-import { CONFIDENCE_LABELS, PARAM_GROUPS } from './params.js';
+import { NOTE_RANGE, PARAM_GROUPS, SOURCE_LABELS } from './params.js';
+import { applyOverrides, exportMap, isValidCc, loadOverrides, saveOverrides } from './overrides.js';
 import {
-  controlChange, formatBytes, listOutputs, noteOff, noteOn,
-  parseSysexHex, requestMidiAccess,
+  controlChange, describeMessage, formatBytes, isHousekeeping, listInputs,
+  listOutputs, noteOff, noteOn, parseSysexHex, requestMidiAccess,
 } from './midi.js';
 
 const $ = (id) => document.getElementById(id);
 
 const state = {
   output: null,
+  input: null,
+  /** CC numbers typed in from the manual's chart, keyed by parameter id. */
+  overrides: loadOverrides(),
   /** Working copy of the selected scale, edited in place by the degree fields. */
   scale: { ...BUILT_IN_SCALES[0], degrees: [...BUILT_IN_SCALES[0].degrees] },
   heldNote: null,
@@ -65,36 +69,52 @@ async function connect() {
     return;
   }
 
-  const refresh = () => {
-    const outputs = listOutputs(access);
-    const select = $('output-select');
+  // Repopulate a port picker, keeping the current selection if it survived.
+  const fillSelect = (select, ports, emptyLabel) => {
     const previous = select.value;
     select.replaceChildren();
+    if (ports.length === 0) {
+      select.append(new Option(emptyLabel, ''));
+      select.disabled = true;
+      return null;
+    }
+    for (const { id, label } of ports) select.append(new Option(label, id));
+    select.disabled = false;
+    select.value = ports.some((port) => port.id === previous) ? previous : ports[0].id;
+    return select.value;
+  };
+
+  const refresh = () => {
+    const outputs = listOutputs(access);
+    const inputs = listInputs(access);
+
+    const outputId = fillSelect($('output-select'), outputs, 'No MIDI outputs found');
+    state.output = outputId ? access.outputs.get(outputId) ?? null : null;
+
+    const inputId = fillSelect($('input-select'), inputs, 'No MIDI inputs found');
+    listenTo(inputId ? access.inputs.get(inputId) : null);
 
     if (outputs.length === 0) {
-      select.append(new Option('No MIDI outputs found', ''));
-      select.disabled = true;
-      state.output = null;
       status.textContent = 'MIDI is available, but no outputs are connected. Plug in your interface.';
       status.className = 'status status-error';
-      setEnabled(false);
-      return;
+    } else {
+      const ins = inputs.length === 1 ? '1 input' : `${inputs.length} inputs`;
+      status.textContent = `MIDI ready with SysEx — ${outputs.length} output(s), ${ins}.`;
+      status.className = 'status status-ok';
     }
-
-    for (const { id, label } of outputs) select.append(new Option(label, id));
-    select.disabled = false;
-    select.value = outputs.some((o) => o.id === previous) ? previous : outputs[0].id;
-    state.output = access.outputs.get(select.value) ?? null;
-
-    status.textContent = `MIDI ready with SysEx — ${outputs.length} output(s).`;
-    status.className = 'status status-ok';
-    setEnabled(true);
+    setEnabled(outputs.length > 0);
   };
 
   access.onstatechange = refresh;
+
   $('output-select').addEventListener('change', (event) => {
     state.output = access.outputs.get(event.target.value) ?? null;
+    setEnabled(Boolean(state.output));
   });
+  $('input-select').addEventListener('change', (event) => {
+    listenTo(access.inputs.get(event.target.value) ?? null);
+  });
+
   refresh();
 }
 
@@ -102,62 +122,142 @@ function setEnabled(enabled) {
   for (const id of ['send-tuning', 'raw-sweep', 'note-hold', 'all-notes-off', 'send-sysex']) {
     $(id).disabled = !enabled;
   }
-  for (const input of document.querySelectorAll('#param-groups input')) {
-    input.disabled = !enabled;
-  }
+  // Only the sliders depend on having an output. The CC number fields stay
+  // editable so the chart can be transcribed before anything is plugged in.
+  for (const sync of rowSyncs) sync();
 }
 
 // ------------------------------------------------------------- parameters
 
+/** Per-row callbacks that re-read whether their slider should be live. */
+const rowSyncs = [];
+
 function renderParams() {
   const container = $('param-groups');
   container.replaceChildren();
+  rowSyncs.length = 0;
 
-  for (const group of PARAM_GROUPS) {
+  for (const group of applyOverrides(PARAM_GROUPS, state.overrides)) {
     const title = document.createElement('div');
     title.className = 'group-title';
     title.textContent = group.name;
     container.append(title);
 
-    for (const param of group.params) {
-      const row = document.createElement('div');
-      row.className = 'param';
-
-      const confidence = CONFIDENCE_LABELS[param.confidence];
-      const name = document.createElement('div');
-      name.className = 'param-name';
-      name.innerHTML = `<strong>${escape(param.label)}</strong>`
-        + `<span class="badge badge-${param.confidence}" title="${escape(confidence.hint)}">`
-        + `${escape(confidence.text)}</span>`;
-
-      const cc = document.createElement('span');
-      cc.className = 'cc-num';
-      cc.textContent = `CC ${param.cc}`;
-      cc.title = param.note ?? '';
-
-      const slider = document.createElement('input');
-      slider.type = 'range';
-      slider.min = String(param.min ?? 0);
-      slider.max = String(param.max ?? 127);
-      slider.value = String(param.initial ?? 0);
-      slider.disabled = true;
-
-      const readout = document.createElement('output');
-      readout.textContent = slider.value;
-
-      slider.addEventListener('input', () => {
-        readout.textContent = slider.value;
-        send(
-          controlChange(channel(), param.cc, Number(slider.value)),
-          `${param.label} (CC ${param.cc})`,
-        );
-      });
-
-      row.append(name, cc, slider, readout);
-      row.title = param.note ?? '';
-      container.append(row);
+    if (group.blurb) {
+      const blurb = document.createElement('p');
+      blurb.className = 'hint group-blurb';
+      blurb.textContent = group.blurb;
+      container.append(blurb);
     }
+
+    for (const param of group.params) container.append(renderParam(param));
   }
+
+  updateMapStatus();
+}
+
+function updateMapStatus() {
+  const unassigned = PARAM_GROUPS
+    .flatMap((group) => group.params)
+    .filter((param) => !isValidCc(state.overrides[param.id] ?? param.cc)).length;
+  $('map-status').textContent = unassigned === 0
+    ? 'Every parameter has a controller number.'
+    : `${unassigned} parameter${unassigned === 1 ? '' : 's'} still without a number.`;
+}
+
+function renderParam(param) {
+  const row = document.createElement('div');
+  row.className = 'param';
+
+  const name = document.createElement('div');
+  name.className = 'param-name';
+  const heading = document.createElement('strong');
+  heading.textContent = param.label;
+  const badge = document.createElement('span');
+  name.append(heading, badge);
+
+  const showSource = (which) => {
+    const source = SOURCE_LABELS[which]
+      ?? { text: 'yours', hint: 'Entered by you, from the manual chart.' };
+    badge.className = `badge badge-${which}`;
+    badge.title = source.hint;
+    badge.textContent = source.text;
+  };
+  showSource(param.source);
+
+  // The controller number is editable: the manual's chart is a figure, so the
+  // numbers it alone carries have to be transcribed by hand.
+  const ccField = document.createElement('input');
+  ccField.type = 'number';
+  ccField.min = '0';
+  ccField.max = '127';
+  ccField.className = 'cc-input';
+  ccField.value = isValidCc(param.cc) ? String(param.cc) : '';
+  ccField.placeholder = 'CC';
+  ccField.title = 'Controller number. Blank until filled in from the manual chart.';
+
+  const slider = document.createElement('input');
+  slider.type = 'range';
+  slider.min = String(param.min ?? 0);
+  slider.max = String(param.max ?? 127);
+  slider.value = String(param.initial ?? 0);
+
+  const readout = document.createElement('output');
+  readout.textContent = slider.value;
+
+  const sync = () => {
+    const cc = Number.parseInt(ccField.value, 10);
+    slider.disabled = !isValidCc(cc) || !state.output;
+    row.classList.toggle('unassigned', !isValidCc(cc));
+  };
+  rowSyncs.push(sync);
+
+  // Updating this row in place rather than re-rendering the list: the field is
+  // mid-blur when `change` fires, so replacing its own ancestor throws.
+  ccField.addEventListener('change', () => {
+    const cc = Number.parseInt(ccField.value, 10);
+
+    if (ccField.value.trim() === '') {
+      delete state.overrides[param.id];
+      ccField.value = isValidCc(param.cc) ? String(param.cc) : '';
+      showSource(param.source);
+    } else if (isValidCc(cc)) {
+      state.overrides[param.id] = cc;
+      showSource(cc === param.cc ? param.source : 'user');
+    } else {
+      ccField.value = isValidCc(param.cc) ? String(param.cc) : '';
+      return;
+    }
+
+    if (!saveOverrides(state.overrides)) {
+      log('cc map', 'browser storage unavailable — this number will not persist', true);
+    }
+    sync();
+    updateMapStatus();
+  });
+
+  slider.addEventListener('input', () => {
+    readout.textContent = slider.value;
+    const cc = Number.parseInt(ccField.value, 10);
+    if (!isValidCc(cc)) return;
+    send(controlChange(channel(), cc, Number(slider.value)), `${param.label} (CC ${cc})`);
+  });
+
+  sync();
+  row.append(name, ccField, slider, readout);
+  if (param.note) row.title = param.note;
+  return row;
+}
+
+function exportCcMap() {
+  const blob = new Blob([exportMap(PARAM_GROUPS, state.overrides)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = Object.assign(document.createElement('a'), {
+    href: url,
+    download: 'juno-66-cc-map.json',
+  });
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 // ----------------------------------------------------------------- tuning
@@ -260,6 +360,14 @@ async function sweep() {
   }
 }
 
+function checkNoteRange() {
+  const note = Number.parseInt($('test-note').value, 10);
+  const outside = Number.isInteger(note) && (note < NOTE_RANGE.min || note > NOTE_RANGE.max);
+  $('note-range-warning').textContent = outside
+    ? `The mod only plays notes ${NOTE_RANGE.min}-${NOTE_RANGE.max}; 0 and 1 are arp and S/H triggers.`
+    : '';
+}
+
 function toggleHeldNote() {
   const button = $('note-hold');
   const note = clamp(Number.parseInt($('test-note').value, 10) || 60, 0, 127);
@@ -288,6 +396,25 @@ function allNotesOff() {
 }
 
 // ------------------------------------------------------------------ wiring
+
+function monitor(event) {
+  const bytes = event.data;
+  if (isHousekeeping(bytes) && !$('monitor-clock').checked) return;
+
+  const item = document.createElement('li');
+  const time = new Date().toLocaleTimeString([], { hour12: false });
+  item.innerHTML = `${time} <span class="what">${escape(describeMessage(bytes))}</span>`;
+
+  const list = $('monitor');
+  list.prepend(item);
+  while (list.children.length > 200) list.lastElementChild.remove();
+}
+
+function listenTo(port) {
+  if (state.input) state.input.onmidimessage = null;
+  state.input = port ?? null;
+  if (state.input) state.input.onmidimessage = monitor;
+}
 
 function wire() {
   $('scale-select').addEventListener('change', (event) => {
@@ -357,6 +484,16 @@ function wire() {
   });
 
   $('clear-log').addEventListener('click', () => $('log').replaceChildren());
+  $('clear-monitor').addEventListener('click', () => $('monitor').replaceChildren());
+  $('export-map').addEventListener('click', exportCcMap);
+  $('test-note').addEventListener('input', checkNoteRange);
+
+  $('reset-map').addEventListener('click', () => {
+    state.overrides = {};
+    saveOverrides(state.overrides);
+    renderParams();
+    log('cc map', 'reset to the numbers from the manual');
+  });
 
   // A held note outliving the page is a stuck note on the synth.
   window.addEventListener('pagehide', () => {

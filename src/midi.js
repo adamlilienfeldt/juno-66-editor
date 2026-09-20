@@ -30,12 +30,69 @@ export async function requestMidiAccess() {
   }
 }
 
+const describePort = (port) => ({
+  id: port.id,
+  label: [port.name, port.manufacturer].filter(Boolean).join(' — '),
+  port,
+});
+
 export function listOutputs(access) {
-  return [...access.outputs.values()].map((port) => ({
-    id: port.id,
-    label: [port.name, port.manufacturer].filter(Boolean).join(' — '),
-    port,
-  }));
+  return [...access.outputs.values()].map(describePort);
+}
+
+export function listInputs(access) {
+  return [...access.inputs.values()].map(describePort);
+}
+
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+/** Name a MIDI note the way the juno-66 manual does, with C3 as middle C. */
+export function noteName(note) {
+  return `${NOTE_NAMES[note % 12]}${Math.floor(note / 12) - 2}`;
+}
+
+/** True for messages that arrive constantly and would drown out the rest. */
+export function isHousekeeping(bytes) {
+  const status = bytes[0];
+  return status === 0xf8 || status === 0xfe; // clock, active sensing
+}
+
+/** Render an incoming message as a line of text for the monitor. */
+export function describeMessage(bytes) {
+  const status = bytes[0];
+  const channel = (status & 0x0f) + 1;
+
+  switch (status & 0xf0) {
+    case 0x80:
+      return `ch${channel} note off  ${noteName(bytes[1])} (${bytes[1]})`;
+    case 0x90:
+      return bytes[2] === 0
+        ? `ch${channel} note off  ${noteName(bytes[1])} (${bytes[1]})`
+        : `ch${channel} note on   ${noteName(bytes[1])} (${bytes[1]}) vel ${bytes[2]}`;
+    case 0xa0:
+      return `ch${channel} aftertouch ${noteName(bytes[1])} ${bytes[2]}`;
+    case 0xb0:
+      return `ch${channel} CC ${bytes[1]} = ${bytes[2]}`;
+    case 0xc0:
+      return `ch${channel} program change ${bytes[1]} (play mode)`;
+    case 0xd0:
+      return `ch${channel} channel pressure ${bytes[1]}`;
+    case 0xe0:
+      return `ch${channel} pitch bend ${((bytes[2] << 7) | bytes[1]) - 8192}`;
+    default:
+      break;
+  }
+
+  switch (status) {
+    case 0xf0: return `sysex ${formatBytes(bytes, { limit: 12 })}`;
+    case 0xf8: return 'clock';
+    case 0xfa: return 'start';
+    case 0xfb: return 'continue';
+    case 0xfc: return 'stop';
+    case 0xfe: return 'active sensing';
+    case 0xff: return 'reset';
+    default: return formatBytes(bytes);
+  }
 }
 
 /** Control change. `channel` is 1-16 as printed on hardware, not 0-15. */

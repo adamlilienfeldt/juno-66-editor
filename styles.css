@@ -162,3 +162,15 @@ output { font-family: var(--mono); font-size: 13px; min-width: 34px; }
   .param { grid-template-columns: 1fr; }
   input[type="text"] { min-width: 0; }
 }
+
+.group-blurb { margin: 2px 0 6px; }
+.cc-input { width: 56px; text-align: center; }
+.param.unassigned .param-name strong { color: var(--ink-dim); }
+.badge-manual { color: var(--ok); }
+.badge-conflict { color: #d2a24c; }
+.badge-chart { color: var(--bad); }
+.badge-user { color: #7fa8d8; }
+#monitor { font-family: var(--mono); font-size: 12px; margin: 0; padding: 0; list-style: none; max-height: 220px; overflow-y: auto; }
+#monitor li { padding: 3px 0; border-top: 1px solid var(--panel-edge); color: var(--ink-dim); }
+#monitor li:first-child { border-top: none; }
+#monitor .what { color: var(--ink); }
