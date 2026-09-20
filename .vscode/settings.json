@@ -1,0 +1,8 @@
+{
+  "javascript.preferences.importModuleSpecifierEnding": "js",
+  "javascript.format.semicolons": "insert",
+  "editor.rulers": [100],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "search.exclude": { "**/node_modules": true }
+}

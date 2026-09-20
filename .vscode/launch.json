@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Starts the server, then opens the page in Chrome with the debugger
+      // attached. Web MIDI prompts for SysEx permission in this profile the
+      // same as in a normal window.
+      "name": "Open in Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "serve"
+    },
+    {
+      "name": "Debug tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--test", "test/*.test.js"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}

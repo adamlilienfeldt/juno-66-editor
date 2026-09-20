@@ -1,0 +1,16 @@
+{
+  // Intellisense only. checkJs is off deliberately: this is vanilla DOM code,
+  // and `document.getElementById` returns HTMLElement, so every `.value` and
+  // `.checked` would need a cast. The noise would bury anything real.
+  // To turn checking on: set checkJs true and `npm i -D @types/node`.
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "checkJs": false,
+    "noEmit": true
+  },
+  "include": ["src/**/*.js", "test/**/*.js", "serve.js"],
+  "exclude": ["node_modules"]
+}

@@ -13,13 +13,33 @@ No build step, no dependencies. Everything is plain ES modules.
 
 ## Running it
 
+Needs **Node 20.11 or newer** (`serve.js` uses `import.meta.dirname`). There is
+nothing to install — no dependencies.
+
 ```sh
-npm run serve      # http://localhost:8173
-npm test           # unit tests for the encoders
+git clone https://github.com/adamlilienfeldt/juno-66-editor.git
+cd juno-66-editor
+
+npm run serve       # http://localhost:8173
+npm test            # 45 unit tests for the encoders
+npm run test:watch  # re-runs them on save
 ```
 
 It has to be *served* rather than opened as a `file://` URL: Web MIDI requires
 a secure context, and `localhost` counts as one.
+
+### In VS Code
+
+`F5` runs **Open in Chrome**, which starts the server as a pre-launch task and
+opens the page with the debugger attached — breakpoints in `src/*.js` work
+directly. `Cmd-Shift-B` style task running covers `serve`, `test` and
+`test:watch` from the command palette under *Run Task*.
+
+Type checking is deliberately off in `jsconfig.json`. This is vanilla DOM code,
+so `document.getElementById` hands back `HTMLElement` and every `.value` and
+`.checked` would need a cast — about forty complaints that would bury anything
+real. Autocomplete for DOM and ES2023 still works. To turn it on anyway, set
+`checkJs` true and `npm i -D @types/node`.
 
 **Chrome or Firefox 108+.** Safari does not implement Web MIDI. The page asks
 for SysEx permission on load, which the tuning dumps need.

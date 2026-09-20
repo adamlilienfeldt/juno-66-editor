@@ -68,6 +68,14 @@ function encodeName(name) {
  * the document disagree, and implementations in the wild differ. We follow the
  * common convention (device ID included); `checksumIncludesDeviceId: false`
  * switches to the other reading if a device rejects the dump.
+ *
+ * @param {object} options
+ * @param {number} [options.deviceId] 0-127; Tubbutec documents 0 for the juno-66.
+ * @param {number} [options.program] Tuning program 0-127; the juno-66's four slots are 0-3.
+ * @param {string} [options.name] Up to 16 printable ASCII characters.
+ * @param {(number|null)[]} options.frequencies 128 entries, Hz or null for "no change".
+ * @param {boolean} [options.checksumIncludesDeviceId] False excludes the device ID.
+ * @returns {Uint8Array} A complete SysEx message, F0 through F7.
  */
 export function buildBulkTuningDump({
   deviceId = 0,

@@ -6,6 +6,10 @@
   "description": "Browser MIDI editor for a Roland Juno-60 with the Tubbutec juno-66 mod",
   "scripts": {
     "test": "node --test test/*.test.js",
-    "serve": "node serve.js"
+    "serve": "node serve.js",
+    "test:watch": "node --test --watch test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20.11"
   }
 }
