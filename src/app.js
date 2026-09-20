@@ -138,19 +138,23 @@ function renderParams() {
   rowSyncs.length = 0;
 
   for (const group of applyOverrides(PARAM_GROUPS, state.overrides)) {
-    const title = document.createElement('div');
+    const section = document.createElement('section');
+    section.className = 'group';
+
+    const title = document.createElement('h3');
     title.className = 'group-title';
     title.textContent = group.name;
-    container.append(title);
-
+    // The blurbs are a couple of sentences each. Shown inline they would cost
+    // more height than the parameters they introduce, so they become the
+    // header's tooltip — same trick the source badges use.
     if (group.blurb) {
-      const blurb = document.createElement('p');
-      blurb.className = 'hint group-blurb';
-      blurb.textContent = group.blurb;
-      container.append(blurb);
+      title.title = group.blurb;
+      title.classList.add('has-note');
     }
+    section.append(title);
 
-    for (const param of group.params) container.append(renderParam(param));
+    for (const param of group.params) section.append(renderParam(param));
+    container.append(section);
   }
 
   updateMapStatus();
@@ -171,17 +175,17 @@ function renderParam(param) {
 
   const name = document.createElement('div');
   name.className = 'param-name';
-  const heading = document.createElement('strong');
-  heading.textContent = param.label;
+  name.textContent = param.label;
+
+  // A dot rather than a word: the label for it lives in the tooltip, which
+  // keeps every parameter on one line.
   const badge = document.createElement('span');
-  name.append(heading, badge);
 
   const showSource = (which) => {
     const source = SOURCE_LABELS[which]
       ?? { text: 'yours', hint: 'Entered by you, from the manual chart.' };
     badge.className = `badge badge-${which}`;
-    badge.title = source.hint;
-    badge.textContent = source.text;
+    badge.title = `${source.text} — ${source.hint}`;
   };
   showSource(param.source);
 
@@ -243,8 +247,25 @@ function renderParam(param) {
     send(controlChange(channel(), cc, Number(slider.value)), `${param.label} (CC ${cc})`);
   });
 
+  // Scrolling over the bar nudges the value. It is deliberately on the bar and
+  // not the whole row: twenty row-wide scroll traps stacked down the panel
+  // would swallow ordinary page scrolling and send CC while doing it.
+  slider.addEventListener('wheel', (event) => {
+    if (slider.disabled) return;
+    event.preventDefault();
+    const next = clamp(
+      Number(slider.value) + (event.deltaY < 0 ? 1 : -1) * (event.shiftKey ? 8 : 1),
+      Number(slider.min),
+      Number(slider.max),
+    );
+    if (next === Number(slider.value)) return;
+    slider.value = String(next);
+    // Reuse the input handler above rather than repeating the send.
+    slider.dispatchEvent(new Event('input'));
+  }, { passive: false });
+
   sync();
-  row.append(name, ccField, slider, readout);
+  row.append(name, badge, ccField, slider, readout);
   if (param.note) row.title = param.note;
   return row;
 }

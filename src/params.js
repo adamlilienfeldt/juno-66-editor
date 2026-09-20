@@ -43,7 +43,7 @@ export const PARAM_GROUPS = [
     params: [
       {
         id: 'porta-fast',
-        label: 'Portamento speed fast',
+        label: 'Fast',
         cc: 28,
         initial: 64,
         source: 'conflict',
@@ -56,7 +56,7 @@ export const PARAM_GROUPS = [
       },
       {
         id: 'porta-slow',
-        label: 'Portamento speed slow',
+        label: 'Slow',
         cc: 29,
         initial: 64,
         source: 'conflict',
@@ -91,7 +91,7 @@ export const PARAM_GROUPS = [
     params: [
       {
         id: 'filter-mod',
-        label: 'Filter cutoff modulation',
+        label: 'Cutoff mod',
         cc: 17,
         initial: 0,
         source: 'manual',
@@ -135,8 +135,8 @@ export const PARAM_GROUPS = [
     name: 'Triangle filter LFO',
     blurb: 'Frequency spans 0.12 Hz to 8 kHz across the coarse and fine controls.',
     params: [
-      { id: 'tri-coarse', label: 'Frequency (coarse)', cc: 23, source: 'chart' },
-      { id: 'tri-fine', label: 'Frequency (fine)', cc: 24, source: 'chart' },
+      { id: 'tri-coarse', label: 'Freq coarse', cc: 23, source: 'chart' },
+      { id: 'tri-fine', label: 'Freq fine', cc: 24, source: 'chart' },
       { id: 'tri-amount', label: 'Amount', cc: 25, source: 'chart' },
     ],
   },
@@ -146,7 +146,7 @@ export const PARAM_GROUPS = [
       { id: 'sh-amount', label: 'Amount', cc: 18, source: 'chart' },
       {
         id: 'sh-divider',
-        label: 'MIDI clock divider',
+        label: 'MIDI clk div',
         cc: 19,
         source: 'chart',
         note: 'Only applies when the S/H clock source is set to MIDI clock in the config menu.',
@@ -161,14 +161,14 @@ export const PARAM_GROUPS = [
     params: [
       {
         id: 'arp-midi-divider',
-        label: 'MIDI clock divider',
+        label: 'MIDI clk div',
         cc: 16,
         source: 'chart',
         note: 'Chart row "Arp midi clock divider". Only applies when the arp clock source is set to MIDI clock in the config menu.',
       },
       {
         id: 'arp-divider',
-        label: 'Clock divider',
+        label: 'Clock div',
         cc: 20,
         source: 'chart',
         note:
