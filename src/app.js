@@ -1,6 +1,7 @@
 import { buildBulkTuningDump } from './mts.js';
 import { BUILT_IN_SCALES, formatScl, parseScl, scaleToFrequencies } from './scale.js';
 import { NOTE_RANGE, PARAM_GROUPS, PLAY_MODES, SOURCE_LABELS } from './params.js';
+import { buildMidnam } from './midnam.js';
 import { applyOverrides, exportMap, isValidCc, loadOverrides, saveOverrides } from './overrides.js';
 import {
   controlChange, describeMessage, formatBytes, isHousekeeping, listInputs,
@@ -283,15 +284,28 @@ function renderParam(param) {
   return row;
 }
 
-function exportCcMap() {
-  const blob = new Blob([exportMap(PARAM_GROUPS, state.overrides)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = Object.assign(document.createElement('a'), {
-    href: url,
-    download: 'juno-66-cc-map.json',
-  });
+function download(text, filename, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const link = Object.assign(document.createElement('a'), { href: url, download: filename });
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function exportMidnam() {
+  download(
+    buildMidnam(PARAM_GROUPS, PLAY_MODES, state.overrides),
+    'Tubbutec juno-66.midnam',
+    'application/xml',
+  );
+  log('exported .midnam', 'install in ~/Library/Audio/MIDI Patch Names/DigiDesign/, then restart Pro Tools');
+}
+
+function exportCcMap() {
+  download(
+    exportMap(PARAM_GROUPS, state.overrides),
+    'juno-66-cc-map.json',
+    'application/json',
+  );
 }
 
 // ----------------------------------------------------------------- tuning
@@ -549,6 +563,7 @@ function wire() {
   $('clear-log').addEventListener('click', () => $('log').replaceChildren());
   $('clear-monitor').addEventListener('click', () => $('monitor').replaceChildren());
   $('export-map').addEventListener('click', exportCcMap);
+  $('export-midnam').addEventListener('click', exportMidnam);
   $('test-note').addEventListener('input', checkNoteRange);
 
   $('reset-map').addEventListener('click', () => {

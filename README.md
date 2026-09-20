@@ -162,6 +162,28 @@ whether the device ID participates in the SysEx checksum. The default includes
 it; the **Device ID in checksum** toggle switches to the other reading if the
 mod rejects a dump.
 
+## Naming the controllers in a DAW
+
+**Export .midnam** writes a MIDI Name Document: an XML file describing what
+this device's controllers and programs are called. With one installed, a MIDI
+automation lane reads *Filter ADSR — Attack* rather than *controller-30*, and
+the program change lane lists the play modes by name instead of 0-4.
+
+On macOS, drop the file in either of:
+
+```
+~/Library/Audio/MIDI Patch Names/DigiDesign/
+/Library/Audio/MIDI Patch Names/DigiDesign/
+```
+
+then restart Pro Tools and assign the device to the MIDI track. Logic and
+Digital Performer read the same format from their own locations.
+
+It is generated from the live map, including any controller number corrected
+in the UI, so re-export after fixing one. Note that the numbers live in the
+browser that typed them — moving between machines means either re-typing a
+correction or re-exporting on each one.
+
 ## Prior art
 
 Worth knowing about before extending this:
@@ -181,6 +203,7 @@ them appears to handle MTS tuning upload.
 | `src/scale.js`  | Temperaments, scale→frequency mapping, `.scl` I/O   |
 | `src/midi.js`   | Web MIDI access and message construction            |
 | `src/params.js` | The juno-66 parameter map, from the V1.29 manual    |
+| `src/midnam.js` | MIDI Name Document export, for DAW controller names |
 | `src/overrides.js` | Per-parameter CC overrides, stored in the browser |
 | `src/app.js`    | UI wiring                                           |
 | `serve.js`      | Static server, so the page gets a secure context    |
