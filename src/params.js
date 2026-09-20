@@ -1,20 +1,25 @@
 // Parameter map for the Tubbutec juno-66, firmware V1.29.
 //
-// Sourced from the prose of the V1.29 user manual. The manual's full MIDI
-// controller chart is a figure in the Appendix (page 23) rather than text, so
-// the numbers it alone carries are not here. Those parameters are listed with
-// `cc: null` and can be filled in from the chart in the UI, which remembers
-// them and can export the result.
+// Sourced from the V1.29 user manual: the body prose, plus the MIDI controller
+// chart in the Appendix (page 23), which is a figure rather than text and was
+// transcribed by hand from:
+//
+//   https://tubbutec.de/files/Tubbutec%20Juno-66%20Manual%20Remix.pdf
+//
 //
 // `source` records where each number came from:
 //
 //   'manual'    - stated in the body text of the V1.29 manual.
-//   'conflict'  - the manual gives this number two different meanings.
-//   'chart'     - named as MIDI-controllable, but the number is only in the
-//                 Appendix chart. `cc` is null until someone fills it in.
+//   'chart'     - read off the Appendix controller chart on page 23.
+//   'conflict'  - chart and body text disagree. Verify by ear.
 //
-// Note the manual's own warning about the chart: its controller numbers are
-// 0-127, so a controller that displays 1-128 is offset by one.
+// Note the chart's own warning: its controller numbers are 0-127, so a
+// controller that displays 1-128 is offset by one.
+//
+// Chart rows deliberately left out of the map, all of which the UI has no
+// business sending blind: 21 and 22 (CV2 and CV3, only if those outputs are
+// installed), 35 and 36 (seq and S/H LFO clock source, switches with no stated
+// range), 64 (sustain), 120 (all sound off) and 123 (all notes off).
 
 /**
  * @typedef {object} Param
@@ -37,18 +42,25 @@ export const PARAM_GROUPS = [
       + '3 is slow. MIDI sets what "fast" and "slow" actually mean.',
     params: [
       {
-        id: 'porta-time',
-        label: 'Portamento time (slow / fast)',
-        cc: 6,
+        id: 'porta-fast',
+        label: 'Portamento speed fast',
+        cc: 28,
         initial: 64,
         source: 'conflict',
         note:
-          'The manual states the exact slow and fast times "can be set using midi CC 6 '
-          + 'or the config menu 11" — but the same manual also gives CC 6 for fatness, '
-          + 'while separately naming CC 27 for fatness. One of the two is a copy-paste '
-          + 'error. Verify by ear before trusting it. Note that CC 6 is data entry MSB, '
-          + 'so it may act on whatever the config menu has selected. Which of slow or '
-          + 'fast it sets likely depends on the RANGE switch position.',
+          'The chart gives 28 for fast and 29 for slow. The body text instead says the '
+          + 'times "can be set using midi CC 6 or the config menu 11" — the same sentence '
+          + 'pattern that misattributes CC 6 to fatness, so it is likely the error. '
+          + 'CC 6 is data entry MSB and would act on whatever the config menu has '
+          + 'selected. Trust 28 and 29, but confirm by ear.',
+      },
+      {
+        id: 'porta-slow',
+        label: 'Portamento speed slow',
+        cc: 29,
+        initial: 64,
+        source: 'conflict',
+        note: 'See the note on fast: the body text names CC 6 for both speeds instead.',
       },
     ],
   },
@@ -62,7 +74,7 @@ export const PARAM_GROUPS = [
         cc: 27,
         initial: 0,
         source: 'manual',
-        note: 'Stated twice in the manual, in the Duo and Mono sections alike.',
+        note: 'Stated twice in the manual and confirmed by the chart.',
       },
       {
         id: 'detune',
@@ -70,7 +82,7 @@ export const PARAM_GROUPS = [
         cc: 26,
         initial: 0,
         source: 'manual',
-        note: 'Stated twice in the manual, in the Duo and Mono sections alike.',
+        note: 'Stated twice in the manual and confirmed by the chart.',
       },
     ],
   },
@@ -79,14 +91,15 @@ export const PARAM_GROUPS = [
     params: [
       {
         id: 'filter-mod',
-        label: 'Filter modulation',
+        label: 'Filter cutoff modulation',
         cc: 17,
         initial: 0,
         source: 'manual',
         note:
           'The manual is explicit: "Controller messages received on controller number 17 '
-          + 'will modulate the filter. The default value is 0." If this does nothing, the '
-          + 'filter cable may not be soldered to the right point on the Juno board.',
+          + 'will modulate the filter. The default value is 0." The chart names 17 filter '
+          + 'cutoff. If this does nothing, the filter cable may not be soldered to the '
+          + 'right point on the Juno board.',
       },
     ],
   },
@@ -96,23 +109,23 @@ export const PARAM_GROUPS = [
       'A global envelope shared by all voices, not one per voice. Ranges run from a '
       + 'few milliseconds to about 5 seconds, on a logarithmic control law.',
     params: [
-      { id: 'adsr-delay', label: 'Delay', cc: null, source: 'chart', note: 'Time before the attack phase begins, 0 to 5 seconds.' },
-      { id: 'adsr-attack', label: 'Attack', cc: null, source: 'chart' },
-      { id: 'adsr-decay', label: 'Decay', cc: null, source: 'chart' },
-      { id: 'adsr-sustain', label: 'Sustain', cc: null, source: 'chart' },
-      { id: 'adsr-release', label: 'Release', cc: null, source: 'chart' },
-      { id: 'adsr-amount', label: 'Amount', cc: null, source: 'chart' },
+      { id: 'adsr-delay', label: 'Delay', cc: 37, source: 'chart', note: 'Time before the attack phase begins, 0 to 5 seconds.' },
+      { id: 'adsr-attack', label: 'Attack', cc: 30, source: 'chart' },
+      { id: 'adsr-decay', label: 'Decay', cc: 31, source: 'chart' },
+      { id: 'adsr-sustain', label: 'Sustain', cc: 32, source: 'chart' },
+      { id: 'adsr-release', label: 'Release', cc: 33, source: 'chart' },
+      { id: 'adsr-amount', label: 'Amount', cc: 34, source: 'chart' },
       {
         id: 'adsr-looping',
         label: 'Looping mode',
-        cc: null,
+        cc: 38,
         source: 'chart',
         note: 'Above 63 is on: the envelope restarts its attack on reaching sustain, until the gate closes.',
       },
       {
         id: 'adsr-polarity',
         label: 'Polarity',
-        cc: null,
+        cc: 39,
         source: 'chart',
         note: 'Above 63 inverts the envelope. The Juno can only output positive values, so zero then sits at the amount setting.',
       },
@@ -122,19 +135,19 @@ export const PARAM_GROUPS = [
     name: 'Triangle filter LFO',
     blurb: 'Frequency spans 0.12 Hz to 8 kHz across the coarse and fine controls.',
     params: [
-      { id: 'tri-coarse', label: 'Frequency (coarse)', cc: null, source: 'chart' },
-      { id: 'tri-fine', label: 'Frequency (fine)', cc: null, source: 'chart' },
-      { id: 'tri-amount', label: 'Amount', cc: null, source: 'chart' },
+      { id: 'tri-coarse', label: 'Frequency (coarse)', cc: 23, source: 'chart' },
+      { id: 'tri-fine', label: 'Frequency (fine)', cc: 24, source: 'chart' },
+      { id: 'tri-amount', label: 'Amount', cc: 25, source: 'chart' },
     ],
   },
   {
     name: 'Sample & hold filter LFO',
     params: [
-      { id: 'sh-amount', label: 'Amount', cc: null, source: 'chart' },
+      { id: 'sh-amount', label: 'Amount', cc: 18, source: 'chart' },
       {
         id: 'sh-divider',
         label: 'MIDI clock divider',
-        cc: null,
+        cc: 19,
         source: 'chart',
         note: 'Only applies when the S/H clock source is set to MIDI clock in the config menu.',
       },
@@ -142,13 +155,26 @@ export const PARAM_GROUPS = [
   },
   {
     name: 'Arpeggiator',
+    blurb:
+      'The config menu gives the arpeggiator two separate divider settings — one under '
+      + 'MIDI clock sync, one for its own clock — and the chart has a controller for each.',
     params: [
       {
-        id: 'arp-divider',
+        id: 'arp-midi-divider',
         label: 'MIDI clock divider',
-        cc: null,
+        cc: 16,
         source: 'chart',
-        note: 'Only applies when the arp clock source is set to MIDI clock in the config menu.',
+        note: 'Chart row "Arp midi clock divider". Only applies when the arp clock source is set to MIDI clock in the config menu.',
+      },
+      {
+        id: 'arp-divider',
+        label: 'Clock divider',
+        cc: 20,
+        source: 'chart',
+        note:
+          'Chart row "Arp clock divider", listed separately from 16. The config menu '
+          + 'likewise lists "Midi Clk Div" and "Clk div" as two entries under ARP. If the '
+          + 'two turn out to do the same thing, one of them is a chart duplicate.',
       },
     ],
   },
@@ -171,6 +197,6 @@ export const BUILT_IN_TEMPERAMENTS = Object.freeze([
 
 export const SOURCE_LABELS = Object.freeze({
   manual: { text: 'manual', hint: 'Stated in the body text of the V1.29 manual.' },
-  conflict: { text: 'conflicting', hint: 'The manual gives this number two different meanings. Verify by ear.' },
-  chart: { text: 'needs chart', hint: 'MIDI-controllable, but the number is only in the Appendix chart on page 23. Enter it here.' },
+  conflict: { text: 'conflicting', hint: 'The chart and the body text disagree on this number. Verify by ear.' },
+  chart: { text: 'chart', hint: 'Read off the MIDI controller chart in the V1.29 manual Appendix, page 23.' },
 });

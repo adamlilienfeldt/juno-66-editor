@@ -59,27 +59,56 @@ channel.
 
 Built against the **firmware V1.29** user manual.
 
-Four numbers come from the manual's body text and are in `src/params.js`:
+Every controllable parameter now has a number in `src/params.js`. Three come
+from the body text; the rest are transcribed from the **MIDI controller chart
+on page 23**, which is a figure rather than text:
 
-| Parameter          | CC | Confidence                            |
-| ------------------ | -- | ------------------------------------- |
-| Filter modulation  | 17 | Stated explicitly, default value 0    |
-| Fatness            | 27 | Stated twice, in Duo and Mono alike   |
-| Detune             | 26 | Stated twice, in Duo and Mono alike   |
-| Portamento time    | 6  | **Conflicting** — see below           |
+| Parameter                  | CC | Source                              |
+| -------------------------- | -- | ----------------------------------- |
+| Arp MIDI clock divider     | 16 | Chart                               |
+| Filter cutoff modulation   | 17 | Body text, confirmed by the chart   |
+| S/H LFO amount             | 18 | Chart                               |
+| S/H LFO clock divider      | 19 | Chart                               |
+| Arp clock divider          | 20 | Chart                               |
+| Triangle LFO freq. coarse  | 23 | Chart                               |
+| Triangle LFO freq. fine    | 24 | Chart                               |
+| Triangle LFO amount        | 25 | Chart                               |
+| Detune                     | 26 | Body text, confirmed by the chart   |
+| Fatness                    | 27 | Body text, confirmed by the chart   |
+| Portamento speed fast      | 28 | Chart — **conflicting**, see below   |
+| Portamento speed slow      | 29 | Chart — **conflicting**, see below   |
+| Filter ADSR attack         | 30 | Chart                               |
+| Filter ADSR decay          | 31 | Chart                               |
+| Filter ADSR sustain        | 32 | Chart                               |
+| Filter ADSR release        | 33 | Chart                               |
+| Filter ADSR amount         | 34 | Chart                               |
+| Filter ADSR delay          | 37 | Chart                               |
+| Filter ADSR looping        | 38 | Chart, off 0-63 / on 64-127         |
+| Filter ADSR polarity       | 39 | Chart, off 0-63 / on 64-127         |
 
-The portamento section says the exact slow and fast times "can be set using
-midi CC 6 or the config menu 11". But the Duo section says the same of
-*fatness* — while also naming CC 27 for fatness two paragraphs later. One of
-those is a copy-paste error in the manual. CC 6 is data entry MSB, which
-suggests it acts on whatever the config menu currently has selected rather than
-addressing portamento directly. Check it by ear.
+The chart's numbers are 0-127. A controller that displays 1-128 is offset by
+one.
 
-Everything else the manual describes as MIDI-controllable — the filter ADSR,
-both filter LFOs, the clock dividers — has its controller number **only in the
-chart on page 23**, which is a figure rather than text. Those parameters ship
-blank. Type the numbers into the CC field next to each one; the page remembers
-them, and **Export CC map** writes them out as JSON.
+**The portamento conflict.** The chart gives 28 for fast and 29 for slow, but
+the body text says the times "can be set using midi CC 6 or the config menu
+11" — and the Duo section says exactly the same of *fatness*, while naming CC
+27 for fatness two paragraphs later and the chart agreeing on 27. So the CC 6
+sentence is the one that repeats itself wrongly. CC 6 is also data entry MSB,
+which would act on whatever the config menu has selected rather than on
+portamento directly. 28 and 29 are the numbers to trust; check by ear.
+
+**Two arp dividers.** The chart lists both "Arp midi clock divider" (16) and
+"Arp clock divider" (20), and the config menu likewise has separate *Midi Clk
+Div* and *Clk div* entries under ARP, so both are mapped. If they turn out to
+do the same thing, one is a chart duplicate.
+
+Chart rows left out of the map: 21 and 22 (CV2 and CV3, only if installed), 35
+and 36 (seq and S/H LFO clock source), 64 (sustain), 120 (all sound off) and
+123 (all notes off) — the last of which the Discovery panel already sends.
+
+Any number here can be corrected in the CC field next to the parameter; the
+page remembers what you type, and **Export CC map** writes the result out as
+JSON.
 
 ### What the panel does vs. what MIDI does
 
@@ -152,6 +181,6 @@ them appears to handle MTS tuning upload.
 | `src/scale.js`  | Temperaments, scale→frequency mapping, `.scl` I/O   |
 | `src/midi.js`   | Web MIDI access and message construction            |
 | `src/params.js` | The juno-66 parameter map, from the V1.29 manual    |
-| `src/overrides.js` | CC numbers transcribed from the manual chart     |
+| `src/overrides.js` | Per-parameter CC overrides, stored in the browser |
 | `src/app.js`    | UI wiring                                           |
 | `serve.js`      | Static server, so the page gets a secure context    |
