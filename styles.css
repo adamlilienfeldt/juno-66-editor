@@ -227,3 +227,14 @@ output { font-family: var(--mono); font-size: 13px; min-width: 34px; }
 @media (max-width: 620px) {
   #param-groups { columns: 1; }
 }
+
+.readback {
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #242831;
+  border: 1px solid var(--panel-edge);
+  min-width: 96px;
+}
+.readback.play-mode-unknown { color: var(--bad); }

@@ -180,6 +180,13 @@ export const PARAM_GROUPS = [
   },
 ];
 
+/**
+ * Play modes, by program number. The mod both responds to program change and
+ * sends it when the play mode is changed on the synth itself — the one panel
+ * action it reports over MIDI. From the table on page 17 of the manual.
+ */
+export const PLAY_MODES = Object.freeze(['Poly', 'Duo', 'Mono', 'Chord', 'Polychord']);
+
 /** MIDI notes the mod acts on, rather than passes over. */
 export const TRIGGER_NOTES = Object.freeze([
   { note: 0, label: 'Arpeggiator trigger' },

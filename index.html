@@ -26,6 +26,14 @@
       <input id="channel-input" type="number" min="1" max="16" value="1">
       <span class="hint">Must match the juno-66's receive channel.</span>
     </div>
+    <div class="row">
+      <label>Play mode</label>
+      <span id="play-mode" class="readback">—</span>
+      <span class="hint">
+        Reported by the synth when you change it there — the only front-panel
+        change it transmits. Needs an input selected below.
+      </span>
+    </div>
   </section>
 
   <section class="panel" id="parameters">
@@ -36,7 +44,8 @@
       and hover a group heading for its notes. Numbers came from the chart on
       page 23 of the manual, which is a figure rather than text and was
       transcribed by hand; correct any of them in place and it will be
-      remembered.
+      remembered. Incoming CC on the selected input moves these bars too, so
+      a fader box or DAW automation keeps the page in step.
     </p>
     <div class="row">
       <button id="export-map" type="button" class="secondary">Export CC map</button>

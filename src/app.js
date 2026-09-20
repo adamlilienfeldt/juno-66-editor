@@ -1,6 +1,6 @@
 import { buildBulkTuningDump } from './mts.js';
 import { BUILT_IN_SCALES, formatScl, parseScl, scaleToFrequencies } from './scale.js';
-import { NOTE_RANGE, PARAM_GROUPS, SOURCE_LABELS } from './params.js';
+import { NOTE_RANGE, PARAM_GROUPS, PLAY_MODES, SOURCE_LABELS } from './params.js';
 import { applyOverrides, exportMap, isValidCc, loadOverrides, saveOverrides } from './overrides.js';
 import {
   controlChange, describeMessage, formatBytes, isHousekeeping, listInputs,
@@ -132,10 +132,14 @@ function setEnabled(enabled) {
 /** Per-row callbacks that re-read whether their slider should be live. */
 const rowSyncs = [];
 
+/** Per-row callbacks that mirror an incoming CC onto the row's slider. */
+const rowReceivers = [];
+
 function renderParams() {
   const container = $('param-groups');
   container.replaceChildren();
   rowSyncs.length = 0;
+  rowReceivers.length = 0;
 
   for (const group of applyOverrides(PARAM_GROUPS, state.overrides)) {
     const section = document.createElement('section');
@@ -263,6 +267,15 @@ function renderParam(param) {
     // Reuse the input handler above rather than repeating the send.
     slider.dispatchEvent(new Event('input'));
   }, { passive: false });
+
+  // Mirror an incoming CC onto this row. Deliberately sets the value rather
+  // than dispatching 'input': firing the handler above would echo the message
+  // straight back out, which is the midi loop the manual warns about.
+  rowReceivers.push((cc, value) => {
+    if (Number.parseInt(ccField.value, 10) !== cc) return;
+    slider.value = String(clamp(value, Number(slider.min), Number(slider.max)));
+    readout.textContent = slider.value;
+  });
 
   sync();
   row.append(name, badge, ccField, slider, readout);
@@ -429,6 +442,35 @@ function monitor(event) {
   const list = $('monitor');
   list.prepend(item);
   while (list.children.length > 200) list.lastElementChild.remove();
+
+  follow(bytes);
+}
+
+/**
+ * Update the UI from a message the synth (or anything else on the input port)
+ * sent us. Exported so it can be driven directly in a browser test.
+ *
+ * Channel is deliberately not filtered. The mod's midi out channels are set
+ * separately from its in channel, so requiring a match would mostly mean the
+ * display quietly never updating.
+ */
+export function follow(bytes) {
+  switch (bytes[0] & 0xf0) {
+    case 0xc0:
+      showPlayMode(bytes[1]);
+      return;
+    case 0xb0:
+      for (const receive of rowReceivers) receive(bytes[1], bytes[2]);
+      return;
+    default:
+  }
+}
+
+function showPlayMode(program) {
+  const known = PLAY_MODES[program];
+  const field = $('play-mode');
+  field.textContent = known ?? `unknown (program ${program})`;
+  field.classList.toggle('play-mode-unknown', !known);
 }
 
 function listenTo(port) {
