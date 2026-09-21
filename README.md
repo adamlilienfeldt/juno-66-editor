@@ -169,15 +169,18 @@ this device's controllers and programs are called. With one installed, a MIDI
 automation lane reads *Filter ADSR — Attack* rather than *controller-30*, and
 the program change lane lists the play modes by name instead of 0-4.
 
-On macOS, drop the file in either of:
+**Install in Pro Tools** does it in one click: the local server writes the
+file to `~/Library/Audio/MIDI Patch Names/DigiDesign/`, creating the folder if
+needed. Restart Pro Tools and assign the device to the MIDI track.
 
-```
-~/Library/Audio/MIDI Patch Names/DigiDesign/
-/Library/Audio/MIDI Patch Names/DigiDesign/
-```
+The page sends only its controller number corrections; the server validates
+them and builds the document itself, and the path is fixed. It refuses
+requests from any origin other than the editor, and listens on localhost only.
 
-then restart Pro Tools and assign the device to the MIDI track. Logic and
-Digital Performer read the same format from their own locations.
+**Export .midnam** downloads the same file instead, for installing by hand —
+into the folder above, or `/Library/Audio/MIDI Patch Names/DigiDesign/` for
+every user on the machine. Logic and Digital Performer read the same format
+from their own locations.
 
 It is generated from the live map, including any controller number corrected
 in the UI, so re-export after fixing one. Note that the numbers live in the

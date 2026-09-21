@@ -300,6 +300,24 @@ function exportMidnam() {
   log('exported .midnam', 'install in ~/Library/Audio/MIDI Patch Names/DigiDesign/, then restart Pro Tools');
 }
 
+/** Ask the local server to write the names where Pro Tools looks for them. */
+async function installMidnam() {
+  try {
+    const response = await fetch('/install-midnam', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ overrides: state.overrides }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error ?? `server answered ${response.status}`);
+    $('map-status').textContent = 'Installed. Restart Pro Tools to pick up the names.';
+    log('installed .midnam', `${result.path} — restart Pro Tools to pick it up`);
+  } catch (error) {
+    $('map-status').textContent = 'Install failed — see the log, or use Export .midnam instead.';
+    log('install failed', error.message, true);
+  }
+}
+
 function exportCcMap() {
   download(
     exportMap(PARAM_GROUPS, state.overrides),
@@ -564,6 +582,7 @@ function wire() {
   $('clear-monitor').addEventListener('click', () => $('monitor').replaceChildren());
   $('export-map').addEventListener('click', exportCcMap);
   $('export-midnam').addEventListener('click', exportMidnam);
+  $('install-midnam').addEventListener('click', installMidnam);
   $('test-note').addEventListener('input', checkNoteRange);
 
   $('reset-map').addEventListener('click', () => {
